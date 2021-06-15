@@ -23,6 +23,10 @@ Tested with Exchange Server 2016 and Exchange Server 2019.
 Switch to select the mailbox type you want to export.
 Options are User, Shared, Room, Arbitration, PublicFolder, Equipment, All
 
+### Database
+
+If set, the script fetches only mailboxes stored in that database.
+
 ### BatchSize
 
 The number of email addresses per split CSV file, aka batch size.
@@ -50,6 +54,12 @@ Export all user mailboxes and create Csv files of 25 users per file, store Csv f
 ```
 
 Export all room mailboxes and create Csv files of 75 mailboxes per file, store Csv files in \Batches folder.
+
+``` PowerShell
+.\New-MailboxMigrationCsv.ps1 -MailboxType Room -BatchSize 20 -UseBatchFolder -Database DB01
+```
+
+Export all room mailboxes of database DB01, create Csv files of 20 mailboxes per file, and store Csv files in \Batches folder.
 
 ## Note
 

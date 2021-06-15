@@ -202,9 +202,13 @@ function Get-Mailboxes {
     [string]$RecipientTypeDetails
   )
   
-  # Export user mailboxes only
+  # Set some variables
   $CsvFileFilepath = Join-Path -Path $scriptPath -ChildPath ('{0}Master.csv' -f $RecipientTypeDetails)
   $BatchOutputFilename = ('{0}Batch' -f $RecipientTypeDetails)
+
+  if($Database -ne '') {    
+    $BatchOutputFilename = ('{1}-{0}Batch' -f $RecipientTypeDetails, $Database.ToUpper())
+  }
   
   if(Test-Path -Path $CsvFileFilepath) {
     Write-Warning  -Message ('Deleting existing CSV file {0}!' -f $CsvFileFilepath)
