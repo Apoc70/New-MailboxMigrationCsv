@@ -7,7 +7,7 @@
     THIS CODE IS MADE AVAILABLE AS IS, WITHOUT WARRANTY OF ANY KIND. THE ENTIRE 
     RISK OF THE USE OR THE RESULTS FROM THE USE OF THIS CODE REMAINS WITH THE USER.
 	
-    Version 1.2, 2021-06-15
+    Version 1.3, 2021-08-25
 
     Ideas, comments, and suggestions via GitHub.
  
@@ -33,6 +33,7 @@
     -------------------------------------------------------------------------------- 
     1.0 Initial community release 
     1.2 Database parameter added, export handling optimized
+    1.3 Archive mailbox support added
     
 	
     .PARAMETER MailboxType
@@ -70,7 +71,7 @@
 
 param (
   [Parameter(Mandatory,HelpMessage='Please select a mailbox type or select All')]
-  [ValidateSet('User','Shared','Room','Arbitration','PublicFolder','Equipment','All')]
+  [ValidateSet('User','Shared','Room','Arbitration','PublicFolder','Equipment','All','Archive')]
   [string]$MailboxType,
   [string]$Database = '',
   [int]$BatchSize = 25,
@@ -78,7 +79,7 @@ param (
   [switch]$UseBatchFolder
 )
 
-$scriptVersion = '1.2'
+$scriptVersion = '1.3'
   
 # Script Path
 $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
@@ -267,6 +268,18 @@ function Get-Mailboxes {
           Write-Verbose -Message ('No Discovery mailbox found in database {0}' -f $Database)
         }          
       }
+      'UserArchiveMailbox' {
+        $Mailboxes = Get-Mailbox -ResultSize Unlimited -Archive | Sort-Object -Property Name | `
+        Select-Object -Property @{Name = 'EmailAddress'; Expression = {$_.PrimarySmtpAddress}} 
+
+        if (($Mailboxes | Measure-Object).Count -gt 0) {
+          Write-Verbose -Message ('Exporting {0} archive mailbox(es)' -f ($Mailboxes | Measure-Object).Count)
+          $Mailboxes | Export-Csv -Path $CsvFileFilepath -Delimiter ',' -Encoding UTF8 -NoTypeInformation -NoClobber -Force
+        }
+        else {
+          Write-Verbose -Message ('No mailbox found in database {0}' -f $Database)
+        }
+      }
       default {
         $Mailboxes = Get-Mailbox -ResultSize Unlimited | Where-Object{$_.RecipientTypeDetails -eq $RecipientTypeDetails} | Sort-Object -Property Name | `
         Select-Object -Property @{Name = 'EmailAddress'; Expression = {$_.PrimarySmtpAddress}} 
@@ -345,6 +358,18 @@ function Get-Mailboxes {
           Write-Verbose -Message ('No Discovery mailbox found in database {0}' -f $Database)
         }
       }
+      'UserArchiveMailbox' {
+        $Mailboxes = Get-Mailbox -ResultSize Unlimited -Archive -Database $Database | Sort-Object -Property Name | `
+        Select-Object -Property @{Name = 'EmailAddress'; Expression = {$_.PrimarySmtpAddress}} 
+
+        if (($Mailboxes | Measure-Object).Count -gt 0) {
+          Write-Verbose -Message ('Exporting {0} archive mailbox(es)' -f ($Mailboxes | Measure-Object).Count)
+          $Mailboxes | Export-Csv -Path $CsvFileFilepath -Delimiter ',' -Encoding UTF8 -NoTypeInformation -NoClobber -Force
+        }
+        else {
+          Write-Verbose -Message ('No mailbox found in database {0}' -f $Database)
+        }
+      }
       default {
         $Mailboxes = Get-Mailbox -ResultSize Unlimited -Database $Database | Where-Object{$_.RecipientTypeDetails -eq $RecipientTypeDetails} | Sort-Object -Property Name | `
         Select-Object -Property @{Name = 'EmailAddress'; Expression = {$_.PrimarySmtpAddress}} 
@@ -391,8 +416,11 @@ switch ($MailboxType) {
   'Equipment' {
     Get-Mailboxes -RecipientTypeDetails 'EquipmentMailbox'  
   }
+  'Archive' {
+    Get-Mailboxes -RecipientTypeDetails 'UserArchiveMailbox'
+  }
   Default {
-    # Export all
+    # Export all besides archives
     Get-Mailboxes -RecipientTypeDetails 'UserMailbox'
     Get-Mailboxes -RecipientTypeDetails 'SharedMailbox'
     Get-Mailboxes -RecipientTypeDetails 'RoomMailbox'
