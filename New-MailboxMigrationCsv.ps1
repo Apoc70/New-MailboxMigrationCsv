@@ -359,7 +359,8 @@ function Get-Mailboxes {
         }
       }
       'UserArchiveMailbox' {
-        $Mailboxes = Get-Mailbox -ResultSize Unlimited -Archive -Database $Database | Sort-Object -Property Name | `
+		Write-Warning -Message 'Fetching archive mailboxes takes some minutes'
+        $Mailboxes = Get-Mailbox -ResultSize Unlimited -Archive | ?{$_.ArchiveDatabase -like $Database} | Sort-Object -Property Name | `
         Select-Object -Property @{Name = 'EmailAddress'; Expression = {$_.PrimarySmtpAddress}} 
 
         if (($Mailboxes | Measure-Object).Count -gt 0) {
